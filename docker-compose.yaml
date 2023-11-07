@@ -133,6 +133,8 @@ services:
       - redis_insight_volume_data:/db
     depends_on:
       - redis
+    networks:
+      - dockernet
 
 
 volumes:

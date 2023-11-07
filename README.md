@@ -72,6 +72,19 @@ notifications_app - это микросервис, представляющий 
    * RedisInsight - http://0.0.0.0:8001/
    * Flower (Celery dashboard) - http://0.0.0.0:5555
 
+# Доступ к RedisInsight и MongoExpress
+
+RedisInsight:
+* host: redis_aceplace
+* port: 6379
+* logic_name_db: 0
+* name: redis-local
+* username: default
+* password: 123456
+
+MongoExpress:
+* login: admin
+* password: pass
 
 # Тестирование API (пример с Postman) <a name="Testing-Api"></a>
 
