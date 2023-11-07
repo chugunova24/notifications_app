@@ -1,0 +1,148 @@
+# Use postgres/example user/password credentials
+version: '3.8'
+
+services:
+  flask:
+    build:
+      context: .
+      dockerfile: ./compose/flask/Dockerfile
+    container_name: flask_app
+    command: /start
+    environment:
+      - PYTHONUNBUFFERED=True
+      - FLASK_APP=${FLASK_APP}
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    ports:
+      - ${FLASK_PORT}:${FLASK_PORT}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - dockernet
+
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./compose/flask/Dockerfile
+    container_name: celery_worker_flask
+    command: /start-celeryworker
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - dockernet
+
+
+
+  flower:
+    build:
+      context: .
+      dockerfile: ./compose/flask/Dockerfile
+    image: flower_celery_flask
+    command: /start-flower
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - FLASK_APP=${FLASK_APP}
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - dockernet
+
+
+  mongodb:
+    image: mongo:7.0-rc
+    container_name: ${MONGO_HOST}
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB}
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    env_file:
+      - .env
+    volumes:
+      - data_mongodb:/data/db
+    networks:
+      - dockernet
+
+
+  mongo-express:
+      image: mongo-express:1-20-alpine3.18
+      container_name: mongoexpress_aceplace
+      restart: always
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+        ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+        ME_CONFIG_MONGODB_AUTH_USERNAME: ${ME_CONFIG_MONGODB_AUTH_USERNAME}
+        ME_CONFIG_MONGODB_AUTH_PASSWORD: ${ME_CONFIG_MONGODB_AUTH_PASSWORD}
+        ME_CONFIG_MONGODB_SERVER: ${MONGO_HOST}
+      ports:
+        - ${ME_PORT}:${ME_PORT}
+      env_file:
+        - .env
+      depends_on:
+        - mongodb
+      networks:
+        - dockernet
+
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_aceplace
+    restart: always
+    volumes:
+      - redis_volume_data:/data
+      - redis_conf:/etc/redis/redis.conf
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    env_file:
+      - .env
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DATABASES: ${REDIS_DATABASES}
+    networks:
+      - dockernet
+
+
+  redis_insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis_insight_aceplace
+    restart: always
+    ports:
+      - ${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}
+    env_file:
+      - .env
+    volumes:
+      - redis_insight_volume_data:/db
+    depends_on:
+      - redis
+
+
+volumes:
+  data_mongodb:
+  redis_volume_data:
+  redis_insight_volume_data:
+  redis_conf:
+
+
+networks:
+  dockernet:
+    driver: bridge
+

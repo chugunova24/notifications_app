@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+# mongo_ready()
+
+>&2 echo 'MongoDB is available'
+exec "$@"

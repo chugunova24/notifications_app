@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+
+worker_ready() {
+    poetry run celery -A runner.celery inspect ping
+}
+
+until worker_ready; do
+  >&2 echo 'Celery workers not available'
+  sleep 1
+done
+>&2 echo 'Celery workers is available'
+
+poetry run celery -A runner.celery  \
+      --broker="redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}" \
+      flower
